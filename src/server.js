@@ -38,10 +38,6 @@ function showCurrent(){
 io.on('connection', function(socket) {
     clients.push(socket)
     console.log('client come...')
-    socket.on('chat message', function(msg) {
-        console.log('message: ' + msg);
-        io.emit('chat message', msg);
-    });
 
     socket.on('connect', function(data) {
         console.log('user connects socket');
@@ -58,22 +54,6 @@ io.on('connection', function(socket) {
         socket.broadcast.emit('send_operation', data)
         showCurrent()
     })
-
-    /**
-     * @desc Client leaves a document.
-     */
-    socket.on('leave_document', function({clientId, docId}) {
-        docId = Number(docId)
-        socket.leave(docId)
-    });
-
-    /**
-     * @desc Client disconnects from the server.
-     */
-    socket.on('will_disconnect', function({clientId}) {
-        connections[clientId].close()
-        delete connections[clientId]
-    });
 
     socket.on('disconnect', function() {
         socket.disconnect(true)
