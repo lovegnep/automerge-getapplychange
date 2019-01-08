@@ -205,7 +205,6 @@ class Client extends React.Component {
         }
         return (
             <div>
-                <span>hehe</span>
                 {body}
             </div>
         )
