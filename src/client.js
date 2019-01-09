@@ -49,13 +49,14 @@ class Client extends React.Component {
     constructor(props) {
         super(props)
         this.doc = Automerge.init()
+        this.oldDoc = null; //记录offline那一刻的doc
         this.clientId = `client:${this.props.clientId}-${uuid()}`
         this.onChange = this.onChange.bind(this)
         this.socket = null
 
         this.state = {
             value: null,
-            online: true,
+            online: false,
             docId: this.props.initialDocId,
         }
     }
@@ -106,7 +107,10 @@ class Client extends React.Component {
             this.clientId = `client:${this.props.clientId}-${uuid()}`
             this.socket = io("http://172.16.11.26:5000", {query: {clientId: this.clientId}})
         }
-
+        this.socket.on('connect',()=>{
+            console.log('连接成功');
+            this.setState({online:true})
+        })
         if (!this.socket.hasListeners("send_operation")) {
             this.socket.on("send_operation", this.updateWithRemoteChanges.bind(this))
         }
@@ -126,6 +130,7 @@ class Client extends React.Component {
      * @param {number} docId - The ID of the document to join.
      */
     sendMessage = (msg, docId) => {
+        if(!this.state.online) return
         console.log('sendMessage:', msg, docId);
         if (!docId) { docId = this.state.docId }
         const data = { clientId: this.clientId, docId: docId, msg }
@@ -178,16 +183,35 @@ class Client extends React.Component {
         })
         this.setState({ value: Value.fromJSON(newJson) })
     }
-    onKeyDown = (event, data, change) => {
-        // 若按下的键不是 shift + "7" 则不返回 change。
-        if (event.which != 55 || !event.shiftKey) return
+    disconnect = ()=>{
+        if (this.socket.hasListeners("send_operation")) {
+            this.socket.removeListener("send_operation")
+        }
+        // 记录下离线时刻的doc，待上线时方便计算离线期间的本地的change
+        this.oldDoc = this.doc;
 
-        // 阻止插入 "&" 至编辑内容的行为。
-        event.preventDefault()
+        // 告诉服务端自己离线了，后期考虑优化，因为客户端对离线不可知
+        this.socket.emit('offline')
+        this.setState({online:false})
+    }
+    reconnect = () =>{
+        if (!this.socket.hasListeners("send_operation")) {
+            this.socket.on("send_operation", this.updateWithRemoteChanges.bind(this))
+        }
+        const offlineChange = Automerge.getChanges(this.oldDoc, this.doc);
+        this.socket.emit('online')
 
-        // 在当前光标位置插入 "and" 字符以更改 state。
-        change.insertText('and')
-        return true
+        this.setState({online:true}, ()=>{
+            this.sendMessage(offlineChange, this.state.docId)
+        })
+    }
+    toggleConnection = ()=>{
+        const { online } = this.state;
+        if(online){
+            this.disconnect()
+        }else{
+            this.reconnect()
+        }
     }
     render = () => {
         let body;
@@ -205,6 +229,11 @@ class Client extends React.Component {
         }
         return (
             <div>
+                <div style={{margin:30}}>
+                    <span style={{marginRight:20}}>当前状态：{this.state.online ? 'online' : 'offline'}</span>
+                    {this.state.online ? <a onClick={()=>{this.toggleConnection()}}>关闭</a> :
+                        <a onClick={()=>{this.toggleConnection()}}>打开</a> }
+                </div>
                 {body}
             </div>
         )

@@ -23,6 +23,7 @@ const createNewDocument = function(docId) {
 
 let connections = {};
 let clients = []
+const historyDoc = new Map();
 createNewDocument(1)
 
 app.get('/', function(req, res) {
@@ -54,7 +55,14 @@ io.on('connection', function(socket) {
         socket.broadcast.emit('send_operation', data)
         showCurrent()
     })
-
+    socket.on('offline', function() {// 客户端暂时离线了
+        historyDoc.set(socket, doc)
+    });
+    socket.on('online', function() {// 客户端由离线变为上线
+        const oldDoc = historyDoc.get(socket)
+        const change = Automerge.getChanges(oldDoc, doc);
+        socket.emit('send_operation', {msg:change})
+    });
     socket.on('disconnect', function() {
         socket.disconnect(true)
     });
