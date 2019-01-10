@@ -123,9 +123,11 @@ class Client extends React.Component {
         })
         this.socket.on('disconnect',(reason)=>{
             console.log('发生disconnect事件：', reason);
+            this.setState({online:false})
         })
         this.socket.on('reconnect',(e)=>{
             console.log('重连成功：' , e);
+            this.setState({online:true})
             const change = Automerge.getChanges(Automerge.init(), this.doc);
             this.sendMessage(change, this.docId)
         })
@@ -143,7 +145,6 @@ class Client extends React.Component {
      * @param {number} docId - The ID of the document to join.
      */
     sendMessage = (msg, docId) => {
-        if(!this.state.online) return
         console.log('sendMessage:', msg, docId);
         if (!docId) { docId = this.state.docId }
         const data = { clientId: this.clientId, docId: docId, msg }
@@ -244,8 +245,6 @@ class Client extends React.Component {
             <div>
                 <div style={{margin:30}}>
                     <span style={{marginRight:20}}>当前状态：{this.state.online ? 'online' : 'offline'}</span>
-                    {this.state.online ? <a onClick={()=>{this.toggleConnection()}}>关闭</a> :
-                        <a onClick={()=>{this.toggleConnection()}}>打开</a> }
                 </div>
                 {body}
             </div>
