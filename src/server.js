@@ -8,6 +8,7 @@ const initialValue = require("./initialSlateValue").initialValue
 const Slate = require("slate")
 const SlateAutomergeBridge = require("./dist/slateAutomergeBridge")
 
+const PORT  = 5000;
 const { slateCustomToJson } = SlateAutomergeBridge
 const Value = Slate.Value
 let doc
@@ -88,6 +89,6 @@ io.on('connection', function(socket) {
 });
 
 
-http.listen(5000, function() {
-    console.log('listening on *:5000');
+http.listen(PORT, function() {
+    console.log('listening on *:', PORT);
 });
