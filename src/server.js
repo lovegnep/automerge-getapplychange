@@ -11,6 +11,7 @@ const SlateAutomergeBridge = require("./dist/slateAutomergeBridge")
 const PORT  = 5000;
 const { slateCustomToJson } = SlateAutomergeBridge
 const Value = Slate.Value
+
 let doc
 let initdoc
 const createNewDocument = function(docId) {
@@ -22,10 +23,8 @@ const createNewDocument = function(docId) {
     })
 }
 
-let connections = {};
 let clients = []
-let clientIds = []
-const historyDoc = new Map();
+
 createNewDocument(1)
 
 app.get('/', function(req, res) {
@@ -56,9 +55,7 @@ io.on('connection', function(socket) {
         console.log('发生错误: ', err, clientId)
     })
 
-    /**
-     * @desc Process the Automerge operation from a client.
-     */
+    // 处理客户端发送来的change
     socket.on("send_operation", function(data) {
         //console.log('receive event send_operation:',data)
         let {clientId, docId, msg} = data
@@ -67,24 +64,11 @@ io.on('connection', function(socket) {
         socket.broadcast.emit('send_operation', data)
         showCurrent()
     })
-    socket.on('offline', function() {// 客户端暂时离线了
-        historyDoc.set(socket, doc)
-    });
-    socket.on('online', function() {// 客户端由离线变为上线
-        const oldDoc = historyDoc.get(socket)
-        const change = Automerge.getChanges(oldDoc, doc);
-        socket.emit('send_operation', {msg:change})
-    });
+
     socket.on('disconnect', function() {
         socket.disconnect(true)
     });
-    // if(clientIds.includes(clientId)){// 断线重连
-    //     const change = Automerge.getChanges(Automerge.init(), doc);
-    //     socket.emit('send_operation', {msg:change})
-    // }else{// 第一次连接
-    //     let changes = Automerge.getChanges(initdoc, doc)
-    //     socket.emit('init', changes)
-    // }
+
     let changes = Automerge.getChanges(initdoc, doc)
     socket.emit('init', changes)
 });
