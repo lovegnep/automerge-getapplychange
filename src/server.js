@@ -44,6 +44,14 @@ io.on('connection', function(socket) {
         console.log('user connects socket');
     });
 
+    // 异常处理
+    socket.on('disconnect', (reason)=>{
+        console.log('发生异常: ', reason)
+    })
+    socket.on('error', (err)=>{
+        console.log('发生错误: ', err)
+    })
+
     /**
      * @desc Process the Automerge operation from a client.
      */
