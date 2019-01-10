@@ -7,7 +7,8 @@ import Immutable from "immutable";
 import io from 'socket.io-client';
 import React from "react"
 import uuid from 'uuid'
-const url = 'http://47.98.136.138:40001'
+const url = 'http://localhost:5000'
+// const url = 'http://47.98.136.138:40001'
 const initialValue = require("./initialSlateValue").initialValue
 const plugin = EditList();
 const plugins = [plugin];
@@ -114,8 +115,15 @@ class Client extends React.Component {
         if (!this.socket.hasListeners("send_operation")) {
             this.socket.on("send_operation", this.updateWithRemoteChanges.bind(this))
         }
+        // 异常处理
         this.socket.on('error',function(err){
-            console.log(err);
+            console.log('发生错误：',err);
+        })
+        this.socket.on('disconnect',function(reason){
+            console.log('发生disconnect事件：', reason);
+        })
+        this.socket.on('reconnect',function(e){
+            console.log('重连成功：' , e);
         })
         this.socket.on('init', this.init)
         this.socket.emit("connect", {clientId: this.clientId})
