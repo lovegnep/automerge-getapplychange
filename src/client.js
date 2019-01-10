@@ -51,6 +51,7 @@ class Client extends React.Component {
         super(props)
         this.doc = Automerge.init()
         this.oldDoc = null; //记录offline那一刻的doc
+        this.recordDoc = null;// 记录断线前的老doc
         this.clientId = `client:${this.props.clientId}-${uuid()}`
         this.onChange = this.onChange.bind(this)
         this.socket = null
@@ -116,15 +117,18 @@ class Client extends React.Component {
             this.socket.on("send_operation", this.updateWithRemoteChanges.bind(this))
         }
         // 异常处理
-        this.socket.on('error',function(err){
+        this.socket.on('error',(err)=>{
             console.log('发生错误：',err);
         })
-        this.socket.on('disconnect',function(reason){
+        this.socket.on('disconnect',(reason)=>{
             console.log('发生disconnect事件：', reason);
         })
-        this.socket.on('reconnect',function(e){
+        this.socket.on('reconnect',(e)=>{
             console.log('重连成功：' , e);
+            const change = Automerge.getChanges(Automerge.init(), this.doc);
+            this.sendMessage(change, this.docId)
         })
+
         this.socket.on('init', this.init)
         this.socket.emit("connect", {clientId: this.clientId})
         this.socket.emit("did_connect", {clientId: this.clientId})

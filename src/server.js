@@ -23,6 +23,7 @@ const createNewDocument = function(docId) {
 
 let connections = {};
 let clients = []
+let clientIds = []
 const historyDoc = new Map();
 createNewDocument(1)
 
@@ -75,6 +76,13 @@ io.on('connection', function(socket) {
     socket.on('disconnect', function() {
         socket.disconnect(true)
     });
+    // if(clientIds.includes(clientId)){// 断线重连
+    //     const change = Automerge.getChanges(Automerge.init(), doc);
+    //     socket.emit('send_operation', {msg:change})
+    // }else{// 第一次连接
+    //     let changes = Automerge.getChanges(initdoc, doc)
+    //     socket.emit('init', changes)
+    // }
     let changes = Automerge.getChanges(initdoc, doc)
     socket.emit('init', changes)
 });
