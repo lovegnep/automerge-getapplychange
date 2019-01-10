@@ -37,8 +37,9 @@ function showCurrent(){
 }
 
 io.on('connection', function(socket) {
+    const clientId = socket.handshake.query.clientId;
     clients.push(socket)
-    console.log('client come...')
+    console.log('client come...', clientId)
 
     socket.on('connect', function(data) {
         console.log('user connects socket');
@@ -46,10 +47,10 @@ io.on('connection', function(socket) {
 
     // 异常处理
     socket.on('disconnect', (reason)=>{
-        console.log('发生异常: ', reason)
+        console.log('发生异常: ', reason, clientId)
     })
     socket.on('error', (err)=>{
-        console.log('发生错误: ', err)
+        console.log('发生错误: ', err, clientId)
     })
 
     /**
