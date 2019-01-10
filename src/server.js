@@ -33,6 +33,7 @@ app.get('/', function(req, res) {
 });
 
 function showCurrent(){
+    return;
     console.log('===========================');
     console.log(JSON.stringify(doc));
     console.log('===========================');
@@ -59,7 +60,7 @@ io.on('connection', function(socket) {
      * @desc Process the Automerge operation from a client.
      */
     socket.on("send_operation", function(data) {
-        console.log('receive event send_operation:',data)
+        //console.log('receive event send_operation:',data)
         let {clientId, docId, msg} = data
         docId = Number(docId)
         doc = Automerge.applyChanges(doc, data.msg)

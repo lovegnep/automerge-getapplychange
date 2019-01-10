@@ -83,6 +83,7 @@ class Client extends React.Component {
         this.showCurrent();
     }
     showCurrent = () =>{
+        return;
         console.log('===========================');
         console.log(JSON.stringify(this.doc));
         console.log('===========================');
