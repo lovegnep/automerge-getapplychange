@@ -7,7 +7,7 @@ import Immutable from "immutable";
 import io from 'socket.io-client';
 import React from "react"
 import uuid from 'uuid'
-
+const url = 'http://47.98.136.138:40001'
 const initialValue = require("./initialSlateValue").initialValue
 const plugin = EditList();
 const plugins = [plugin];
@@ -105,7 +105,7 @@ class Client extends React.Component {
         if (!this.socket) {
             console.log('connecting...')
             this.clientId = `client:${this.props.clientId}-${uuid()}`
-            this.socket = io("http://172.16.11.26:5000", {query: {clientId: this.clientId}})
+            this.socket = io(url, {query: {clientId: this.clientId}})
         }
         this.socket.on('connect',()=>{
             console.log('连接成功');
