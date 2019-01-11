@@ -15,7 +15,7 @@ const Value = Slate.Value
 let doc
 let initdoc
 const createNewDocument = function(docId) {
-    initdoc = Automerge.init(`server-1234`);
+    initdoc = Automerge.init();
     const initialSlateValue = Value.fromJSON(initialValue);
     doc = Automerge.change(initdoc, "Initialize Slate state", doc => {
         doc.note = slateCustomToJson(initialSlateValue.document);
