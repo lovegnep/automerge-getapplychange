@@ -22,7 +22,7 @@ const createNewDocument = function(docId) {
     })
 }
 
-let clients = []
+let clients = new Map()
 
 createNewDocument(1)
 
@@ -39,7 +39,7 @@ function showCurrent(){
 
 io.on('connection', function(socket) {
     const clientId = socket.handshake.query.clientId;
-    clients.push(socket)
+    clients.set(clientId, socket)
     console.log('client come...', clientId)
 
     socket.on('connect', function(data) {
@@ -49,6 +49,9 @@ io.on('connection', function(socket) {
     // 异常处理
     socket.on('disconnect', (reason)=>{
         console.log('发生异常: ', reason, clientId)
+        socket.removeAllListeners()
+        clients.delete(clientId)
+        socket = null
     })
     socket.on('error', (err)=>{
         console.log('发生错误: ', err, clientId)
@@ -63,10 +66,6 @@ io.on('connection', function(socket) {
         socket.broadcast.emit('send_operation', data)
         showCurrent()
     })
-
-    socket.on('disconnect', function() {
-        socket.disconnect(true)
-    });
 
     let changes = Automerge.getChanges(initdoc, doc)
     socket.emit('init', changes)
