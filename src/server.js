@@ -87,7 +87,7 @@ io.on('connection', function(socket) {
 
     // 处理客户端发送来的change
     socket.on("send_operation", function(change) {
-        console.log('receive send_operation:', change)
+        console.log('receive send_operation:', clientId)
         const room = clientRoomMap.get(clientId);
         let doc = getRoomDoc(room);
         doc = Automerge.applyChanges(doc, change)
