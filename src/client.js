@@ -133,7 +133,9 @@ class Client extends React.Component {
             this.setState({online:true})
             if(this.state.curDocName){//之前已经加入过房间
                 const change = Automerge.getChanges(Automerge.init(), this.doc);
+                console.log('发送joinRoom')
                 this.socket.emit('joinRoom', this.state.curDocName, (flag)=>{
+                    console.log('send_operation')
                     this.socket.emit('send_operation', change)
                 })
             }
