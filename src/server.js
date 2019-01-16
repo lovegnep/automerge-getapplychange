@@ -5,6 +5,7 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http)
 const Automerge = require("automerge")
 const initialValue = require("./initialSlateValue").initialValue
+const documentsList = require("./initialSlateValue").documentsList
 const Slate = require("slate")
 const SlateAutomergeBridge = require("./dist/slateAutomergeBridge")
 
@@ -29,6 +30,14 @@ createNewDocument(1)
 app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
 });
+
+function getDocsOfNameList(){
+    const nameList = [];
+    for(const docitem of documentsList){
+        nameList.push(docitem.name)
+    }
+    return nameList;
+}
 
 function showCurrent(){
     return;
