@@ -136,6 +136,7 @@ class Client extends React.Component {
                 this.socket.emit('joinRoom', this.state.curDocName, (flag)=>{
                     console.log('send_operation')
                     this.socket.emit('send_operation', change)
+                    this.socket.emit('init')
                 })
             }
         })
@@ -219,9 +220,11 @@ class Client extends React.Component {
         if(docName === this.state.curDocName) {
             return;
         }
-        this.doc = Automerge.init()
-        this.setState({curDocName:docName})
-        this.socket.emit('joinRoom', docName, (flag)=>{})
+        this.socket.emit('joinRoom', docName, (flag)=>{
+            this.doc = Automerge.init()
+            this.setState({curDocName:docName})
+            this.socket.emit('init')
+        })
     }
     render = () => {
         const {docNameList, curDocName} = this.state

@@ -95,6 +95,7 @@ io.on('connection', function(socket) {
         socket.to(room).emit('send_operation', change)
     })
 
+    // 处理加入房间请求
     socket.on('joinRoom', function(room, cb){
         const oldroom = clientRoomMap.get(clientId)
         if(oldroom){
@@ -107,11 +108,17 @@ io.on('connection', function(socket) {
         }
         socket.join(room);
         clientRoomMap.set(clientId, room);
+        cb(true)
+    })
+
+    // 处理请求初始数据
+    socket.on('init', function(){
+        const room = clientRoomMap.get(clientId)
         const doc = getRoomDoc(room);
         const change = Automerge.getChanges(Automerge.init(), doc);
         socket.emit('init', change)
-        cb(true)
     })
+
 
     socket.emit('docList', docNameList)
 });
