@@ -4,7 +4,6 @@ const app = require('express')();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http)
 const Automerge = require("automerge")
-const initialValue = require("./initialSlateValue").initialValue
 const documentsList = require("./initialSlateValue").documentsList
 const Slate = require("slate")
 const SlateAutomergeBridge = require("./dist/slateAutomergeBridge")
@@ -13,19 +12,24 @@ const PORT  = 5000;
 const { slateCustomToJson } = SlateAutomergeBridge
 const Value = Slate.Value
 
-let doc
-let initdoc
-const createNewDocument = function(docId) {
-    initdoc = Automerge.init();
+const createNewDocument = function(room) {
+    const initdoc = Automerge.init();
+    const initialValue = nameDocsMap.get(room);
+    if(!initialValue){
+        console.error('can not find doc of ', room);
+        return null
+    }
     const initialSlateValue = Value.fromJSON(initialValue);
-    doc = Automerge.change(initdoc, "Initialize Slate state", doc => {
+    const doc = Automerge.change(initdoc, "Initialize Slate state", doc => {
         doc.note = slateCustomToJson(initialSlateValue.document);
     })
+    return doc
 }
 
-let clients = new Map()
-
-createNewDocument(1)
+let clients = new Map()// clientId ==> socket
+const roomDocsMap = new Map()  // docname ===> doc
+const nameDocsMap = new Map()  // docname ===> initval
+const clientRoomMap = new Map()// clientId ===> room
 
 app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
@@ -35,15 +39,29 @@ function getDocsOfNameList(){
     const nameList = [];
     for(const docitem of documentsList){
         nameList.push(docitem.name)
+        nameDocsMap.set(docitem.name, docitem)
     }
     return nameList;
 }
 
-function showCurrent(){
-    return;
-    console.log('===========================');
-    console.log(JSON.stringify(doc));
-    console.log('===========================');
+const docNameList = getDocsOfNameList()
+function isValidRoot(room){
+    return docNameList.includes(room)
+}
+function initRoomDoc(room){
+    if(roomDocsMap.get(room)){
+        return console.error('room exists.');
+    }
+    roomDocsMap.set(room, createNewDocument(room))
+}
+function getRoomDoc(room){
+    let doc = roomDocsMap.get(room);
+    if(doc){
+        return doc;
+    }else{
+        initRoomDoc(room)
+    }
+    return roomDocsMap.get(room);
 }
 
 io.on('connection', function(socket) {
@@ -58,6 +76,7 @@ io.on('connection', function(socket) {
     // 异常处理
     socket.on('disconnect', (reason)=>{
         console.log('发生异常: ', reason, clientId)
+        clientRoomMap.delete(clientId)
         socket.removeAllListeners()
         clients.delete(clientId)
         socket = null
@@ -67,17 +86,34 @@ io.on('connection', function(socket) {
     })
 
     // 处理客户端发送来的change
-    socket.on("send_operation", function(data) {
-        //console.log('receive event send_operation:',data)
-        let {clientId, docId, msg} = data
-        docId = Number(docId)
-        doc = Automerge.applyChanges(doc, data.msg)
-        socket.broadcast.emit('send_operation', data)
-        showCurrent()
+    socket.on("send_operation", function(change) {
+        console.log('receive send_operation:', change)
+        const room = clientRoomMap.get(clientId);
+        let doc = getRoomDoc(room);
+        doc = Automerge.applyChanges(doc, change)
+        roomDocsMap.set(room, doc)
+        socket.to(room).emit('send_operation', change)
     })
 
-    let changes = Automerge.getChanges(initdoc, doc)
-    socket.emit('init', changes)
+    socket.on('joinRoom', function(room, cb){
+        const oldroom = clientRoomMap.get(clientId)
+        if(oldroom){
+            if(oldroom === room){
+                console.warn('client alwready in ', room);
+                return;
+            }else{
+                socket.leave(oldroom)
+            }
+        }
+        socket.join(room);
+        clientRoomMap.set(clientId, room);
+        const doc = getRoomDoc(room);
+        const change = Automerge.getChanges(Automerge.init(), doc);
+        socket.emit('init', change)
+        cb(true)
+    })
+
+    socket.emit('docList', docNameList)
 });
 
 

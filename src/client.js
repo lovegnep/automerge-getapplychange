@@ -61,6 +61,8 @@ class Client extends React.Component {
             value: null,
             online: false,
             docId: this.props.initialDocId,
+            docNameList:[],
+            curDocName:''
         }
     }
 
@@ -80,8 +82,7 @@ class Client extends React.Component {
         this.setState({ value: value })
         let res = applySlateOperations(this.doc, this.state.docId, operations, this.clientId)
         this.doc = res.docNew
-        this.sendMessage(res.changes, this.state.docId)
-        this.showCurrent();
+        this.socket.emit('send_operation', res.changes);
     }
     showCurrent = () =>{
         return;
@@ -89,22 +90,21 @@ class Client extends React.Component {
         console.log(JSON.stringify(this.doc));
         console.log('===========================');
     }
-    /**************************************
-     * SOCKET OPERATIONS                  *
-     **************************************/
+
     init = (data) => {
         console.log('receive event init:',data);
+        this.doc = Automerge.init()
         this.doc = Automerge.applyChanges(this.doc, data)
 
         const newValue = automergeJsonToSlate({"document": {...this.doc.note}})
         const value = Value.fromJSON(newValue)
         this.setState({ value: value })
     }
-    /**
-     * @function connect
-     * @desc Connect to the server, setup listeners, open the Automerge
-     *    connection and emit "connect" and "did_connect" events.
-     */
+
+    docNameList = (list) => {
+        this.setState({docNameList: list})
+    }
+
     connect = () => {
         if (!this.socket) {
             console.log('connecting...')
@@ -118,6 +118,8 @@ class Client extends React.Component {
         if (!this.socket.hasListeners("send_operation")) {
             this.socket.on("send_operation", this.updateWithRemoteChanges.bind(this))
         }
+
+
         // 异常处理
         this.socket.on('error',(err)=>{
             console.log('发生错误：',err);
@@ -129,13 +131,16 @@ class Client extends React.Component {
         this.socket.on('reconnect',(e)=>{
             console.log('重连成功：' , e);
             this.setState({online:true})
-            const change = Automerge.getChanges(Automerge.init(), this.doc);
-            this.sendMessage(change, this.docId)
+            if(this.state.curDocName){//之前已经加入过房间
+                const change = Automerge.getChanges(Automerge.init(), this.doc);
+                this.socket.emit('joinRoom', this.state.curDocName, (flag)=>{
+                    this.socket.emit('send_operation', change)
+                })
+            }
         })
 
+        this.socket.on('docList', this.docNameList)
         this.socket.on('init', this.init)
-        this.socket.emit("connect", {clientId: this.clientId})
-        this.socket.emit("did_connect", {clientId: this.clientId})
         console.log('done')
     }
 
@@ -154,19 +159,10 @@ class Client extends React.Component {
         }
     }
 
-    /***************************************
-     * UPDATE CLIENT FROM REMOTE OPERATION *
-     ***************************************/
-    /**
-     * @function updateWithRemoteChanges
-     * @desc Update the Automerge document with changes from another client
-     * @param {Object} msg - A message created by Automerge.Connection
-     */
     updateWithRemoteChanges = (msg) => {
         console.log(`Client ${this.clientId} received message:`)
-        console.log(msg)
         const currentDoc = this.doc
-        this.doc = Automerge.applyChanges(this.doc, msg.msg)
+        this.doc = Automerge.applyChanges(this.doc, msg)
 
         const opSetDiff = Automerge.diff(currentDoc, this.doc)
         if (opSetDiff.length !== 0) {
@@ -181,16 +177,6 @@ class Client extends React.Component {
         this.showCurrent()
     }
 
-    /**********************************************
-     * Fail-safe for Automerge->Slate conversion  *
-     **********************************************/
-    /**
-     * @function updateSlateFromAutomerge
-     * @desc Directly update the Slate Value from Automerge, ignoring Slate
-     *     operations. This is not preferred when syncing documents since it
-     *     causes a re-render and loss of cursor position (and on mobile,
-     *     a re-render drops the keyboard).
-     */
     updateSlateFromAutomerge = () => {
         const doc = this.doc
         const newJson = automergeJsonToSlate({
@@ -228,7 +214,15 @@ class Client extends React.Component {
             this.reconnect()
         }
     }
+    onDocChange = (docName) => {
+        if(docName === this.state.curDocName) {
+            return;
+        }
+        this.setState({curDocName:docName})
+        this.socket.emit('joinRoom', docName, (flag)=>{})
+    }
     render = () => {
+        const {docNameList, curDocName} = this.state
         let body;
         if (this.state.value !== null) {
             body = (
@@ -248,6 +242,11 @@ class Client extends React.Component {
                     <span style={{marginRight:20}}>当前状态：{this.state.online ? 'online' : 'offline'}</span>
                 </div>
                 {body}
+                <div>
+                    {docNameList.map((docName)=>{
+                        return <p key={docName} style={curDocName === docName ? {fontWeight:"bold"} : {}} onClick={()=>{this.onDocChange(docName)}}>{docName}</p>
+                    })}
+                </div>
             </div>
         )
     }
