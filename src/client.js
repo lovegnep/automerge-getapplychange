@@ -93,7 +93,6 @@ class Client extends React.Component {
 
     init = (data) => {
         console.log('receive event init:',data);
-        this.doc = Automerge.init()
         this.doc = Automerge.applyChanges(this.doc, data)
 
         const newValue = automergeJsonToSlate({"document": {...this.doc.note}})
@@ -220,6 +219,7 @@ class Client extends React.Component {
         if(docName === this.state.curDocName) {
             return;
         }
+        this.doc = Automerge.init()
         this.setState({curDocName:docName})
         this.socket.emit('joinRoom', docName, (flag)=>{})
     }
