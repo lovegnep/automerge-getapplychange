@@ -91,7 +91,6 @@ io.on('connection', function(socket) {
             console.log('receive send_operation:', clientId)
             const room = clientRoomMap.get(clientId);
             let doc = getRoomDoc(room);
-            const tmpchanges = Automerge.getChanges(Automerge.init(), doc)
             doc = Automerge.applyChanges(doc, change)
             roomDocsMap.set(room, doc)
             socket.to(room).emit('send_operation', change)

@@ -118,7 +118,7 @@ class Client extends React.Component {
                     clientId: this.clientId
                 },
                 forceNew:true,
-                transports: ['polling']
+                // transports: ['polling']
             })
         }
         this.socket.on('connect',()=>{
@@ -142,11 +142,11 @@ class Client extends React.Component {
             console.log('重连成功：' , e);
             this.setState({online:true})
             if(this.state.curDocName){//之前已经加入过房间
-                const change = Automerge.getChanges(Automerge.init(), this.doc);
+                // const change = Automerge.getChanges(Automerge.init(), this.doc);
                 console.log('发送joinRoom')
                 this.socket.emit('joinRoom', this.state.curDocName, (flag)=>{
-                    console.log('send_operation')
-                    this.socket.emit('send_operation', change)
+                    // console.log('send_operation')
+                    // this.socket.emit('send_operation', change)
                     this.socket.emit('init')
                 })
             }
