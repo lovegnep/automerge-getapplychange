@@ -257,7 +257,7 @@ class Client extends React.Component {
                 <div style={{margin:30}}>
                     <span style={{marginRight:20}}>当前状态：{this.state.online ? 'online' : 'offline'}</span>
                 </div>
-                <div style={{width:'15%', float:'left', border:'1px solid'}}>
+                <div style={{width:'10%', float:'left', border:'1px solid'}}>
                     <p style={{textAlign:'center'}}>请选择文档</p>
                     {docNameList.map((docName)=>{
                         return <p key={docName} style={curDocName === docName ? {fontWeight:"bold"} : {}} onClick={()=>{this.onDocChange(docName)}}>{docName}</p>
