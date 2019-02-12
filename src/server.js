@@ -102,6 +102,7 @@ io.on('connection', function(socket) {
 
     // 处理加入房间请求
     socket.on('joinRoom', function(room, cb){
+        console.log('加入房间：', clientId)
         const oldroom = clientRoomMap.get(clientId)
         if(oldroom){
             if(oldroom === room){
@@ -118,6 +119,7 @@ io.on('connection', function(socket) {
 
     // 处理请求初始数据
     socket.on('init', function(){
+        console.log('请求初始数据：', clientId)
         const room = clientRoomMap.get(clientId)
         const doc = getRoomDoc(room);
         const change = Automerge.getChanges(Automerge.init(), doc);
