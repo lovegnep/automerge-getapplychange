@@ -113,7 +113,7 @@ class Client extends React.Component {
         if (!this.socket) {
             console.log('connecting...')
             this.clientId = `client:${this.props.clientId}-${uuid()}`
-            this.socket = io(url, {query: {clientId: this.clientId}})
+            this.socket = io(url, {query: {clientId: this.clientId},forceNew:true})
         }
         this.socket.on('connect',()=>{
             console.log('连接成功');
