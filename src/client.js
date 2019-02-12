@@ -83,6 +83,9 @@ class Client extends React.Component {
         this.setState({ value: value })
         let res = applySlateOperations(this.doc, this.state.docId, operations, this.clientId)
         this.doc = res.docNew
+        if(res.changes.length <= 0) {
+            return
+        }
         console.log('发送change:', res.changes)
         this.socket.emit('send_operation', res.changes);
     }
