@@ -76,7 +76,7 @@ io.on('connection', function(socket) {
     // 异常处理
     socket.on('disconnect', (reason)=>{
         console.log('发生异常: ', reason, clientId)
-        clientRoomMap.delete(clientId)
+        // clientRoomMap.delete(clientId)
         socket.removeAllListeners()
         clients.delete(clientId)
         socket = null
