@@ -105,8 +105,8 @@ io.on('connection', function(socket) {
         const oldroom = clientRoomMap.get(clientId)
         if(oldroom){
             if(oldroom === room){
-                console.warn('client alwready in ', room);
-                return;
+                // console.warn('client alwready in ', room);
+                // return;
             }else{
                 socket.leave(oldroom)
             }
@@ -121,6 +121,9 @@ io.on('connection', function(socket) {
         console.log('请求初始数据：', clientId)
         const room = clientRoomMap.get(clientId)
         const doc = getRoomDoc(room);
+        if(!doc){
+            return console.error('未找到room对应的doc')
+        }
         const change = Automerge.getChanges(Automerge.init(), doc);
         socket.emit('init', change)
     })
