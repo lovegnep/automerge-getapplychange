@@ -8,7 +8,7 @@ import io from 'socket.io-client';
 import React from "react"
 import uuid from 'uuid'
 // const url = 'http://thoughts-release.project.ci'
-// const url = 'http://47.98.136.138:40001'
+const url = 'http://47.98.136.138:40001'
 // const url = 'http://localhost:5000'
 // const url = 'http://172.16.11.26:5000'
 const initialValue = require("./initialSlateValue").initialValue
@@ -83,6 +83,7 @@ class Client extends React.Component {
         this.setState({ value: value })
         let res = applySlateOperations(this.doc, this.state.docId, operations, this.clientId)
         this.doc = res.docNew
+        console.log('发送change:', res.changes)
         this.socket.emit('send_operation', res.changes);
     }
     showCurrent = () =>{
