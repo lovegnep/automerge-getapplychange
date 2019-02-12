@@ -8,7 +8,7 @@ const documentsList = require("./initialSlateValue").documentsList
 const Slate = require("slate")
 const SlateAutomergeBridge = require("./dist/slateAutomergeBridge")
 
-const PORT  = 5000;
+const PORT  = 40001;
 const { slateCustomToJson } = SlateAutomergeBridge
 const Value = Slate.Value
 
@@ -85,14 +85,19 @@ io.on('connection', function(socket) {
         console.log('发生错误: ', err, clientId)
     })
 
-    // 处理客户端发送来的change
+    // 处理客户端发送来的changes
     socket.on("send_operation", function(change) {
-        console.log('receive send_operation:', clientId)
-        const room = clientRoomMap.get(clientId);
-        let doc = getRoomDoc(room);
-        doc = Automerge.applyChanges(doc, change)
-        roomDocsMap.set(room, doc)
-        socket.to(room).emit('send_operation', change)
+        try{
+            console.log('receive send_operation:', clientId)
+            const room = clientRoomMap.get(clientId);
+            let doc = getRoomDoc(room);
+            const tmpchanges = Automerge.getChanges(Automerge.init(), doc)
+            doc = Automerge.applyChanges(doc, change)
+            roomDocsMap.set(room, doc)
+            socket.to(room).emit('send_operation', change)
+        } catch (e) {
+            console.error('应用change发生错误:',e)
+        }
     })
 
     // 处理加入房间请求
