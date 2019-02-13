@@ -1,6 +1,11 @@
-import { applyAutomergeOperations, applySlateOperations, automergeJsonToSlate, slateCustomToJson} from "./libs/slateAutomergeBridge"
-import { Editor } from "slate-react"
-import { Value } from "slate"
+import {
+    applyAutomergeOperations,
+    applySlateOperations,
+    automergeJsonToSlate,
+    slateCustomToJson
+} from "./libs/slateAutomergeBridge"
+import {Editor} from "slate-react"
+import {Value} from "slate"
 import Automerge from "automerge"
 import EditList from "slate-edit-list"
 import Immutable from "immutable";
@@ -16,7 +21,7 @@ const plugin = EditList();
 const plugins = [plugin];
 
 function renderNode(props) {
-    const { node, attributes, children, editor } = props;
+    const {node, attributes, children, editor} = props;
     const isCurrentItem = plugin.utils
         .getItemsAtRange(editor.value)
         .contains(node);
@@ -62,8 +67,8 @@ class Client extends React.Component {
             value: null,
             online: false,
             docId: this.props.initialDocId,
-            docNameList:[],
-            curDocName:''
+            docNameList: [],
+            curDocName: ''
         }
     }
 
@@ -79,17 +84,17 @@ class Client extends React.Component {
     /**************************************
      * UPDATE CLIENT FROM LOCAL OPERATION *
      **************************************/
-    onChange = ({ operations, value }) => {
-        this.setState({ value: value })
+    onChange = ({operations, value}) => {
+        this.setState({value: value})
         let res = applySlateOperations(this.doc, this.state.docId, operations, this.clientId)
         this.doc = res.docNew
-        if(res.changes.length <= 0) {
+        if (res.changes.length <= 0) {
             return
         }
         console.log('发送change:', res.changes)
         this.socket.emit('send_operation', res.changes);
     }
-    showCurrent = () =>{
+    showCurrent = () => {
         return;
         console.log('===========================');
         console.log(JSON.stringify(this.doc));
@@ -97,12 +102,12 @@ class Client extends React.Component {
     }
 
     init = (data) => {
-        console.log('receive event init:',data);
+        console.log('receive event init:', data);
         this.doc = Automerge.applyChanges(this.doc, data)
 
         const newValue = automergeJsonToSlate({"document": {...this.doc.note}})
         const value = Value.fromJSON(newValue)
-        this.setState({ value: value })
+        this.setState({value: value})
     }
 
     docNameList = (list) => {
@@ -117,13 +122,15 @@ class Client extends React.Component {
                 query: {
                     clientId: this.clientId
                 },
-                forceNew:true,
+                forceNew: true,
                 // transports: ['polling']
             })
         }
-        this.socket.on('connect',()=>{
+        this.socket.on('connect', () => {
             console.log('连接成功');
-            this.setState({online:true})
+            console.log('清空sendBuffer')
+            this.socket.sendBuffer = []
+            this.setState({online: true})
         })
         if (!this.socket.hasListeners("send_operation")) {
             this.socket.on("send_operation", this.updateWithRemoteChanges.bind(this))
@@ -131,20 +138,20 @@ class Client extends React.Component {
 
 
         // 异常处理
-        this.socket.on('error',(err)=>{
-            console.log('发生错误：',err);
+        this.socket.on('error', (err) => {
+            console.log('发生错误：', err);
         })
-        this.socket.on('disconnect',(reason)=>{
+        this.socket.on('disconnect', (reason) => {
             console.log('发生disconnect事件：', reason);
-            this.setState({online:false})
+            this.setState({online: false})
         })
-        this.socket.on('reconnect',(e)=>{
-            console.log('重连成功：' , e);
-            this.setState({online:true})
-            if(this.state.curDocName){//之前已经加入过房间
+        this.socket.on('reconnect', (e) => {
+            console.log('重连成功：', e);
+            this.setState({online: true})
+            if (this.state.curDocName) {//之前已经加入过房间
                 // const change = Automerge.getChanges(Automerge.init(), this.doc);
                 console.log('发送joinRoom')
-                this.socket.emit('joinRoom', this.state.curDocName, (flag)=>{
+                this.socket.emit('joinRoom', this.state.curDocName, (flag) => {
                     // console.log('send_operation')
                     // this.socket.emit('send_operation', change)
                     this.socket.emit('init')
@@ -165,8 +172,10 @@ class Client extends React.Component {
      */
     sendMessage = (msg, docId) => {
         console.log('sendMessage:', msg, docId);
-        if (!docId) { docId = this.state.docId }
-        const data = { clientId: this.clientId, docId: docId, msg }
+        if (!docId) {
+            docId = this.state.docId
+        }
+        const data = {clientId: this.clientId, docId: docId, msg}
         if (this.socket) {
             this.socket.emit("send_operation", data)
         }
@@ -180,11 +189,13 @@ class Client extends React.Component {
         const opSetDiff = Automerge.diff(currentDoc, this.doc)
         if (opSetDiff.length !== 0) {
             let change = this.state.value.change()
-            change = applyAutomergeOperations(opSetDiff, change, () => { this.updateSlateFromAutomerge() });
+            change = applyAutomergeOperations(opSetDiff, change, () => {
+                this.updateSlateFromAutomerge()
+            });
             if (change) {
-                this.setState({ value: change.value })
+                this.setState({value: change.value})
             }
-        }else{
+        } else {
             console.log('没有改变')
         }
         this.showCurrent()
@@ -193,11 +204,11 @@ class Client extends React.Component {
     updateSlateFromAutomerge = () => {
         const doc = this.doc
         const newJson = automergeJsonToSlate({
-            "document": { ...doc.note }
+            "document": {...doc.note}
         })
-        this.setState({ value: Value.fromJSON(newJson) })
+        this.setState({value: Value.fromJSON(newJson)})
     }
-    disconnect = ()=>{
+    disconnect = () => {
         if (this.socket.hasListeners("send_operation")) {
             this.socket.removeListener("send_operation")
         }
@@ -206,34 +217,34 @@ class Client extends React.Component {
 
         // 告诉服务端自己离线了，后期考虑优化，因为客户端对离线不可知
         this.socket.emit('offline')
-        this.setState({online:false})
+        this.setState({online: false})
     }
-    reconnect = () =>{
+    reconnect = () => {
         if (!this.socket.hasListeners("send_operation")) {
             this.socket.on("send_operation", this.updateWithRemoteChanges.bind(this))
         }
         const offlineChange = Automerge.getChanges(this.oldDoc, this.doc);
         this.socket.emit('online')
 
-        this.setState({online:true}, ()=>{
+        this.setState({online: true}, () => {
             this.sendMessage(offlineChange, this.state.docId)
         })
     }
-    toggleConnection = ()=>{
-        const { online } = this.state;
-        if(online){
+    toggleConnection = () => {
+        const {online} = this.state;
+        if (online) {
             this.disconnect()
-        }else{
+        } else {
             this.reconnect()
         }
     }
     onDocChange = (docName) => {
-        if(docName === this.state.curDocName) {
+        if (docName === this.state.curDocName) {
             return;
         }
-        this.socket.emit('joinRoom', docName, (flag)=>{
+        this.socket.emit('joinRoom', docName, (flag) => {
             this.doc = Automerge.init()
-            this.setState({curDocName:docName})
+            this.setState({curDocName: docName})
             this.socket.emit('init')
         })
     }
@@ -244,7 +255,9 @@ class Client extends React.Component {
             body = (
                 <Editor
                     key={this.clientId}
-                    ref={(e) => { this.editor = e }}
+                    ref={(e) => {
+                        this.editor = e
+                    }}
                     renderNode={renderNode}
                     onChange={this.onChange}
                     plugins={plugins}
@@ -253,22 +266,26 @@ class Client extends React.Component {
             )
         }
         return (
-            <div style={{width:'100%'}}>
-                <div style={{margin:30}}>
-                    <span style={{marginRight:20}}>当前状态：{this.state.online ? 'online' : 'offline'}</span>
+            <div style={{width: '100%'}}>
+                <div style={{margin: 30}}>
+                    <span style={{marginRight: 20}}>当前状态：{this.state.online ? 'online' : 'offline'}</span>
                 </div>
-                <div style={{width:'10%', float:'left', border:'1px solid'}}>
-                    <p style={{textAlign:'center'}}>请选择文档</p>
-                    {docNameList.map((docName)=>{
-                        return <p key={docName} style={curDocName === docName ? {fontWeight:"bold"} : {}} onClick={()=>{this.onDocChange(docName)}}>{docName}</p>
+                <div style={{width: '10%', float: 'left', border: '1px solid'}}>
+                    <p style={{textAlign: 'center'}}>请选择文档</p>
+                    {docNameList.map((docName) => {
+                        return <p key={docName} style={curDocName === docName ? {fontWeight: "bold"} : {}}
+                                  onClick={() => {
+                                      this.onDocChange(docName)
+                                  }}>{docName}</p>
                     })}
                 </div>
-                <div style={{width:'80%',float:'left', border:'1px solid', padding:10}}>
-                    <p style={{textAlign:'center'}}>在此处编辑</p>
+                <div style={{width: '80%', float: 'left', border: '1px solid', padding: 10}}>
+                    <p style={{textAlign: 'center'}}>在此处编辑</p>
                     {body}
                 </div>
             </div>
         )
     }
 }
+
 export default Client
