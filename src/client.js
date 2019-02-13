@@ -129,7 +129,7 @@ class Client extends React.Component {
         this.socket.on('connect', () => {
             console.log('连接成功');
             console.log('清空sendBuffer')
-            this.socket.sendBuffer = []
+            // this.socket.sendBuffer = []
             this.setState({online: true})
         })
         if (!this.socket.hasListeners("send_operation")) {
