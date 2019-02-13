@@ -82,6 +82,7 @@ io.on('connection', function (socket) {
         // clientRoomMap.delete(clientId)
         socket.removeAllListeners()
         clients.delete(clientId)
+        socket.disconnect(true)
         socket = null
     })
     socket.on('error', (err) => {
