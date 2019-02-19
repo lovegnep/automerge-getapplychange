@@ -126,7 +126,7 @@ io.on('connection', function(socket) {
                 .map(state => state.get('change')).toJSON()
             if(missingChanges.length > 0){
                 console.log('丢失的change长度', missingChanges.length)
-                this.socket.emit('send_operation', missingChanges)
+                socket.emit('send_operation', missingChanges)
             }else{
                 console.log('未丢失change')
             }
