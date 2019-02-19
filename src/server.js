@@ -115,10 +115,10 @@ io.on('connection', function(socket) {
         try{
             const room = clientRoomMap.get(clientId)
             const doc = getRoomDoc(room);
-            const newOpt = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states').map(states => states.size).toJSON()
+            const newOpt = Automerge.Frontend.getBackendState(doc).get('opSet').get('states').map(states => states.size).toJSON()
             console.log('当前时钟：', newOpt)
             console.log('客户端时钟：', clock)
-            const optSet = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states')
+            const optSet = Automerge.Frontend.getBackendState(doc).get('opSet').get('states')
             const missingChanges = optSet.map((states, actor) => {
                 return states.skip(clock[actor] || 0)
             }).valueSeq()
