@@ -112,22 +112,27 @@ io.on('connection', function(socket) {
     })
 
     socket.on('syncClock', (clock) =>{
-        const room = clientRoomMap.get(clientId)
-        const doc = getRoomDoc(room);
-        const newOpt = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states').map(states => states.size).toJSON()
-        console.log('当前时钟：', newOpt)
-        console.log('客户端时钟：', clock)
-        const optSet = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states')
-        const missingChanges = optSet.map((states, actor) => {
-            return states.skip(clock[actor] || 0)
-        }).valueSeq()
-            .flatten(1)
-            .map(state => state.get('change')).toJSON()
-        if(missingChanges.length > 0){
-            console.log('丢失的change:', missingChanges)
-            socket.emit('send_operation', missingChanges)
+        try{
+            const room = clientRoomMap.get(clientId)
+            const doc = getRoomDoc(room);
+            const newOpt = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states').map(states => states.size).toJSON()
+            console.log('当前时钟：', newOpt)
+            console.log('客户端时钟：', clock)
+            const optSet = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states')
+            const missingChanges = optSet.map((states, actor) => {
+                return states.skip(clock[actor] || 0)
+            }).valueSeq()
+                .flatten(1)
+                .map(state => state.get('change')).toJSON()
+            if(missingChanges.length > 0){
+                console.log('丢失的change:', missingChanges)
+                socket.emit('send_operation', missingChanges)
+            }
+            socket.emit('syncClock', newOpt)
+        }catch (e) {
+            console.error('syncClock发生错误：',e);
         }
-        socket.emit('syncClock', newOpt)
+
     })
 
     // 处理请求初始数据
