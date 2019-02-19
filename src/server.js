@@ -125,8 +125,10 @@ io.on('connection', function(socket) {
                 .flatten(1)
                 .map(state => state.get('change')).toJSON()
             if(missingChanges.length > 0){
-                console.log('丢失的change:', missingChanges)
-                socket.emit('send_operation', missingChanges)
+                console.log('丢失的change长度', missingChanges.length)
+                this.socket.emit('send_operation', missingChanges)
+            }else{
+                console.log('未丢失change')
             }
             socket.emit('syncClock', newOpt)
         }catch (e) {

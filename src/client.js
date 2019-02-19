@@ -134,8 +134,10 @@ class Client extends React.Component {
                 .flatten(1)
                 .map(state => state.get('change')).toJSON()
             if(missingChanges.length > 0){
-                console.log('丢失的change:', missingChanges)
+                console.log('丢失的change长度', missingChanges.length)
                 this.socket.emit('send_operation', missingChanges)
+            }else{
+                console.log('未丢失change')
             }
         })
         // 异常处理
