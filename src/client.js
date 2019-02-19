@@ -103,7 +103,11 @@ class Client extends React.Component {
     docNameList = (list) => {
         this.setState({docNameList: list})
     }
-
+    getCurClock = () =>{
+        const newOpt = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states').map(states => states.size).toJSON()
+        console.log('当前时钟：', newOpt)
+        return newOpt
+    }
     connect = () => {
         if (!this.socket) {
             console.log('connecting...')
@@ -118,7 +122,22 @@ class Client extends React.Component {
             this.socket.on("send_operation", this.updateWithRemoteChanges.bind(this))
         }
 
-
+        this.socket.on('syncClock', (clock) =>{
+            const doc = this.doc;
+            const newOpt = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states').map(states => states.size).toJSON()
+            console.log('当前时钟：', newOpt)
+            console.log('服务器时钟：', clock)
+            const optSet = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states')
+            const missingChanges = optSet.map((states, actor) => {
+                return states.skip(clock[actor] || 0)
+            }).valueSeq()
+                .flatten(1)
+                .map(state => state.get('change')).toJSON()
+            if(missingChanges.length > 0){
+                console.log('丢失的change:', missingChanges)
+                this.socket.emit('send_operation', missingChanges)
+            }
+        })
         // 异常处理
         this.socket.on('error',(err)=>{
             console.log('发生错误：',err);
@@ -131,12 +150,12 @@ class Client extends React.Component {
             console.log('重连成功：' , e);
             this.setState({online:true})
             if(this.state.curDocName){//之前已经加入过房间
-                const change = Automerge.getChanges(Automerge.init(), this.doc);
+                // const change = Automerge.getChanges(Automerge.init(), this.doc);
                 console.log('发送joinRoom')
                 this.socket.emit('joinRoom', this.state.curDocName, (flag)=>{
-                    console.log('send_operation')
-                    this.socket.emit('send_operation', change)
-                    this.socket.emit('init')
+                    // console.log('send_operation')
+                    // this.socket.emit('send_operation', change)
+                    // this.socket.emit('init')
                 })
             }
         })
