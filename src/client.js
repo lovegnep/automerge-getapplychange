@@ -156,6 +156,7 @@ class Client extends React.Component {
                     // console.log('send_operation')
                     // this.socket.emit('send_operation', change)
                     // this.socket.emit('init')
+                    this.socket.emit('syncClock', this.getCurClock())
                 })
             }
         })
