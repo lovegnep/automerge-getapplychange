@@ -3,7 +3,7 @@ const { fromJS } = require('immutable')
 const { Backend, Frontend } = Automerge
 
 function getClock(doc){
-    return Automerge.Frontend.getBackendState(doc).get('opSet').get('states').map(states => states.size).toJS()
+    return Frontend.getBackendState(doc).getIn(['opSet', 'clock']).toJS()
 }
 
 function getMissingChanges(doc, clock = {}){
