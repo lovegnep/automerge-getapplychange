@@ -7,6 +7,7 @@ const Automerge = require("automerge")
 const documentsList = require("./initialSlateValue").documentsList
 const Slate = require("slate")
 const SlateAutomergeBridge = require("./dist/slateAutomergeBridge")
+const Clock = require('./clock')
 
 const PORT  = 40001;
 const { slateCustomToJson } = SlateAutomergeBridge
@@ -115,15 +116,10 @@ io.on('connection', function(socket) {
         try{
             const room = clientRoomMap.get(clientId)
             const doc = getRoomDoc(room);
-            const newOpt = Automerge.Frontend.getBackendState(doc).get('opSet').get('states').map(states => states.size).toJSON()
+            const newOpt = Clock.getClock(doc)
             console.log('当前时钟：', newOpt)
             console.log('客户端时钟：', clock)
-            const optSet = Automerge.Frontend.getBackendState(doc).get('opSet').get('states')
-            const missingChanges = optSet.map((states, actor) => {
-                return states.skip(clock[actor] || 0)
-            }).valueSeq()
-                .flatten(1)
-                .map(state => state.get('change')).toJSON()
+            const missingChanges = Clock.getMissingChanges(doc, clock)
             if(missingChanges.length > 0){
                 console.log('丢失的change长度', missingChanges.length)
                 socket.emit('send_operation', missingChanges)

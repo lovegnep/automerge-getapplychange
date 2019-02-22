@@ -13,6 +13,7 @@ const url = 'http://47.98.136.138:40001'
 const initialValue = require("./initialSlateValue").initialValue
 const plugin = EditList();
 const plugins = [plugin];
+const Clock = require('./clock')
 
 function renderNode(props) {
     const { node, attributes, children, editor } = props;
@@ -104,7 +105,7 @@ class Client extends React.Component {
         this.setState({docNameList: list})
     }
     getCurClock = () =>{
-        const newOpt = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states').map(states => states.size).toJSON()
+        const newOpt = Clock.getClock(this.doc)
         console.log('当前时钟：', newOpt)
         return newOpt
     }
@@ -124,15 +125,10 @@ class Client extends React.Component {
 
         this.socket.on('syncClock', (clock) =>{
             const doc = this.doc;
-            const newOpt = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states').map(states => states.size).toJSON()
+            const newOpt = this.getCurClock()
             console.log('当前时钟：', newOpt)
             console.log('服务器时钟：', clock)
-            const optSet = Automerge.Frontend.getBackendState(this.doc).get('opSet').get('states')
-            const missingChanges = optSet.map((states, actor) => {
-                return states.skip(clock[actor] || 0)
-            }).valueSeq()
-                .flatten(1)
-                .map(state => state.get('change')).toJSON()
+            const missingChanges = Clock.getMissingChanges(this.doc, clock)
             if(missingChanges.length > 0){
                 console.log('丢失的change长度', missingChanges.length)
                 this.socket.emit('send_operation', missingChanges)
